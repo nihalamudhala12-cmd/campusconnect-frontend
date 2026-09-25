@@ -1,0 +1,55 @@
+name: CampusConnect Frontend CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  frontend-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+        continue-on-error: true
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          elif [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json found. Static frontend detected."
+          fi
+
+      - name: Run available tests
+        run: |
+          if [ -f package.json ]; then
+            if npm run | grep -q "test"; then
+              npm test
+            else
+              echo "No test script found. Skipping test command."
+            fi
+          else
+            echo "No package.json found. Skipping npm tests."
+          fi
+
+      - name: Validate frontend files
+        run: |
+          test -f log_in.html
+          test -f dashboard2.html
+          test -f dashboard.js
+          test -f dashboard-ui.js
+          echo "Core CampusConnect frontend files verified."
+
+      - name: Frontend CI completed
+        run: echo "CampusConnect frontend CI passed."
